@@ -1,0 +1,1151 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gita Anjelina Kasmiar · Music Manager</title>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(145deg, #1e1a2e 0%, #2a1f3d 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1.5rem;
+            position: relative;
+            transition: background 0.5s ease;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: var(--bg-image, none);
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            opacity: 0.85;
+            z-index: 0;
+            transition: all 0.5s ease;
+        }
+
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.4);
+            z-index: 0;
+        }
+
+        .app-card {
+            max-width: 800px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.07);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 2.5rem;
+            padding: 2rem 1.8rem 2.2rem;
+            box-shadow: 0 25px 45px rgba(0, 0, 0, 0.6), inset 0 1px 2px rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            transition: 0.25s ease;
+            position: relative;
+            z-index: 1;
+        }
+
+        .app-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.8rem;
+            flex-wrap: wrap;
+            gap: 0.5rem 0.8rem;
+        }
+
+        .app-title {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .app-title i {
+            font-size: 2rem;
+            color: #f2c6ff;
+            filter: drop-shadow(0 0 6px #c084fc);
+        }
+
+        .app-title h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            letter-spacing: -0.3px;
+            background: linear-gradient(135deg, #f0e6ff, #d9b3ff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 2px 8px rgba(180, 100, 255, 0.2);
+        }
+
+        .app-title span {
+            font-weight: 300;
+            font-size: 0.95rem;
+            color: #b7a0d0;
+            margin-left: 4px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .add-music-btn, .bg-btn {
+            background: rgba(200, 150, 255, 0.12);
+            border: 1px solid rgba(200, 150, 255, 0.25);
+            color: #e4d0ff;
+            padding: 0.6rem 1.2rem;
+            border-radius: 60px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: 0.2s;
+            cursor: pointer;
+            backdrop-filter: blur(4px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .add-music-btn i, .bg-btn i {
+            font-size: 1.1rem;
+            color: #c9a8ff;
+        }
+
+        .add-music-btn:hover, .bg-btn:hover {
+            background: rgba(200, 150, 255, 0.25);
+            border-color: #b48cff;
+            transform: scale(1.02);
+            color: white;
+            box-shadow: 0 6px 18px rgba(160, 100, 255, 0.3);
+        }
+
+        .bg-btn {
+            padding: 0.6rem 1rem;
+        }
+
+        .input-section {
+            background: rgba(0, 0, 0, 0.25);
+            border-radius: 80px;
+            padding: 0.3rem 0.3rem 0.3rem 1.5rem;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.4rem;
+            margin-bottom: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(4px);
+        }
+
+        .input-section input {
+            flex: 1 1 180px;
+            background: transparent;
+            border: none;
+            padding: 0.8rem 0.2rem;
+            color: #f0e6ff;
+            font-size: 0.95rem;
+            outline: none;
+            min-width: 120px;
+        }
+
+        .input-section input::placeholder {
+            color: #a28bbd;
+            font-weight: 300;
+            letter-spacing: 0.2px;
+        }
+
+        .input-section .file-label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(180, 130, 255, 0.12);
+            padding: 0.45rem 1rem;
+            border-radius: 40px;
+            color: #d4bbff;
+            font-size: 0.9rem;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: 0.15s;
+            white-space: nowrap;
+        }
+
+        .input-section .file-label:hover {
+            background: rgba(200, 150, 255, 0.2);
+            border-color: #8f6bcb;
+        }
+
+        .input-section input[type="file"] {
+            display: none;
+        }
+
+        .input-section .submit-btn {
+            background: #9f7aea;
+            border: none;
+            color: #1a1127;
+            padding: 0.7rem 1.6rem;
+            border-radius: 60px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            transition: 0.2s;
+            box-shadow: 0 4px 14px rgba(140, 80, 255, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .input-section .submit-btn:hover {
+            background: #b48aff;
+            transform: scale(1.02);
+            box-shadow: 0 6px 20px rgba(150, 90, 255, 0.5);
+        }
+
+        .input-section .submit-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .music-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.7rem;
+            max-height: 380px;
+            overflow-y: auto;
+            padding-right: 4px;
+            margin-top: 0.2rem;
+        }
+
+        .music-list::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .music-list::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 12px;
+        }
+
+        .music-list::-webkit-scrollbar-thumb {
+            background: #7a5aaa;
+            border-radius: 12px;
+        }
+
+        .music-item {
+            background: rgba(30, 20, 50, 0.6);
+            backdrop-filter: blur(6px);
+            border-radius: 60px;
+            padding: 0.3rem 0.3rem 0.3rem 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+            flex-wrap: wrap;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            transition: 0.15s;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .music-item:hover {
+            background: rgba(45, 30, 70, 0.7);
+            border-color: rgba(200, 150, 255, 0.2);
+        }
+
+        .music-item .track-info {
+            flex: 1 1 120px;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            min-width: 80px;
+        }
+
+        .music-item .track-info i {
+            color: #c4a5ff;
+            font-size: 1rem;
+            width: 20px;
+            text-align: center;
+        }
+
+        .music-item .track-name {
+            color: #f2e8ff;
+            font-weight: 500;
+            font-size: 0.95rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 150px;
+        }
+
+        .music-item audio {
+            flex: 2 1 160px;
+            min-width: 120px;
+            height: 34px;
+            border-radius: 50px;
+            background: #1e142b;
+            outline: none;
+            filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.3));
+        }
+
+        .music-item audio::-webkit-media-controls-panel {
+            background: #2d1f42;
+        }
+
+        .music-item .action-buttons {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            margin-left: auto;
+        }
+
+        .music-item .action-buttons button {
+            background: transparent;
+            border: none;
+            color: #b397d9;
+            width: 36px;
+            height: 36px;
+            border-radius: 40px;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: 0.15s;
+            backdrop-filter: blur(4px);
+        }
+
+        .music-item .action-buttons button i {
+            pointer-events: none;
+        }
+
+        .music-item .action-buttons .play-btn {
+            color: #b8a0e6;
+        }
+
+        .music-item .action-buttons .play-btn:hover {
+            background: rgba(160, 120, 255, 0.2);
+            color: #dcc6ff;
+        }
+
+        .music-item .action-buttons .delete-btn {
+            color: #d490a0;
+        }
+
+        .music-item .action-buttons .delete-btn:hover {
+            background: rgba(220, 100, 120, 0.2);
+            color: #ffb0c0;
+        }
+
+        .music-item .uploading-indicator {
+            font-size: 0.7rem;
+            color: #a386c9;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #826b9e;
+            padding: 2.5rem 1rem;
+            font-weight: 300;
+            letter-spacing: 0.4px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .empty-state i {
+            font-size: 2.6rem;
+            opacity: 0.3;
+            color: #a386c9;
+        }
+
+        .loading-state {
+            text-align: center;
+            color: #a386c9;
+            padding: 1.5rem;
+            font-size: 0.95rem;
+        }
+
+        .footer-note {
+            margin-top: 1.5rem;
+            text-align: right;
+            font-size: 0.7rem;
+            color: #5f4a78;
+            letter-spacing: 0.4px;
+            border-top: 1px solid rgba(255, 255, 255, 0.03);
+            padding-top: 0.8rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .footer-note i {
+            margin-right: 4px;
+            color: #936fbf;
+        }
+
+        .status-badge {
+            display: inline-block;
+            font-size: 0.65rem;
+            background: rgba(100, 200, 100, 0.15);
+            color: #8bc98b;
+            padding: 0.2rem 0.7rem;
+            border-radius: 30px;
+            border: 1px solid rgba(100, 200, 100, 0.1);
+        }
+
+        .status-badge.offline {
+            background: rgba(255, 200, 100, 0.15);
+            color: #e8c87a;
+            border-color: rgba(255, 200, 100, 0.1);
+        }
+
+        .bg-preview {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 999;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(4px);
+        }
+
+        .bg-preview.active {
+            display: flex;
+        }
+
+        .bg-preview-content {
+            background: rgba(30, 20, 50, 0.95);
+            padding: 2rem;
+            border-radius: 2rem;
+            max-width: 450px;
+            width: 90%;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.8);
+        }
+
+        .bg-preview-content h3 {
+            color: #e4d0ff;
+            margin-bottom: 1.2rem;
+            text-align: center;
+        }
+
+        .bg-option {
+            display: block;
+            width: 100%;
+            padding: 0.8rem 1.2rem;
+            margin-bottom: 0.6rem;
+            background: rgba(200, 150, 255, 0.08);
+            border: 1px solid rgba(200, 150, 255, 0.15);
+            border-radius: 60px;
+            color: #d4bbff;
+            cursor: pointer;
+            transition: 0.2s;
+            text-align: left;
+            font-size: 0.95rem;
+        }
+
+        .bg-option:hover {
+            background: rgba(200, 150, 255, 0.2);
+            border-color: #b48cff;
+            transform: scale(1.02);
+        }
+
+        .bg-option i {
+            margin-right: 10px;
+            width: 20px;
+            color: #c9a8ff;
+        }
+
+        .bg-upload-btn {
+            background: rgba(100, 200, 255, 0.1);
+            border: 2px dashed rgba(100, 200, 255, 0.3);
+            border-radius: 60px;
+            padding: 0.8rem 1.2rem;
+            color: #a8d4ff;
+            cursor: pointer;
+            transition: 0.2s;
+            text-align: center;
+            margin-top: 0.5rem;
+            font-size: 0.95rem;
+            display: block;
+            width: 100%;
+        }
+
+        .bg-upload-btn:hover {
+            background: rgba(100, 200, 255, 0.2);
+            border-color: #6ab0ff;
+        }
+
+        .bg-upload-btn input {
+            display: none;
+        }
+
+        .close-bg-preview {
+            background: rgba(255, 100, 100, 0.15);
+            border: 1px solid rgba(255, 100, 100, 0.2);
+            color: #ff9090;
+            padding: 0.6rem 1.5rem;
+            border-radius: 60px;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-top: 0.8rem;
+            width: 100%;
+            font-size: 0.95rem;
+        }
+
+        .close-bg-preview:hover {
+            background: rgba(255, 100, 100, 0.25);
+            border-color: #ff6060;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(30, 20, 50, 0.95);
+            color: #e4d0ff;
+            padding: 0.8rem 1.5rem;
+            border-radius: 60px;
+            border: 1px solid rgba(200, 150, 255, 0.2);
+            backdrop-filter: blur(12px);
+            z-index: 1000;
+            display: none;
+            font-size: 0.9rem;
+            max-width: 90%;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .toast.show {
+            display: block;
+            animation: slideUp 0.3s ease;
+        }
+
+        .toast.error {
+            border-color: rgba(255, 100, 100, 0.3);
+            color: #ffb0b0;
+        }
+
+        .toast.success {
+            border-color: rgba(100, 200, 100, 0.3);
+            color: #8bc98b;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+
+        @media (max-width: 580px) {
+            .app-card {
+                padding: 1.5rem 1rem;
+            }
+            .input-section {
+                border-radius: 40px;
+                padding: 0.5rem 0.5rem;
+            }
+            .input-section .submit-btn {
+                width: 100%;
+                justify-content: center;
+                padding: 0.7rem;
+            }
+            .music-item {
+                border-radius: 30px;
+                padding: 0.6rem 0.6rem 0.6rem 1rem;
+            }
+            .music-item audio {
+                flex: 1 1 100%;
+                min-width: 100px;
+            }
+            .music-item .track-name {
+                max-width: 100px;
+            }
+            .header-actions {
+                width: 100%;
+            }
+            .add-music-btn, .bg-btn {
+                flex: 1;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Toast Notification -->
+    <div class="toast" id="toast"></div>
+
+    <!-- Background Preview Modal -->
+    <div class="bg-preview" id="bgPreview">
+        <div class="bg-preview-content">
+            <h3><i class="fas fa-image"></i> Ubah Background</h3>
+            
+            <button class="bg-option" data-bg="default">
+                <i class="fas fa-palette"></i> Default (Gradient)
+            </button>
+            <button class="bg-option" data-bg="https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=1920&q=80">
+                <i class="fas fa-headphones"></i> Konser Malam
+            </button>
+            <button class="bg-option" data-bg="https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=1920&q=80">
+                <i class="fas fa-guitar"></i> Studio Musik
+            </button>
+            <button class="bg-option" data-bg="https://images.unsplash.com/photo-1506157786151-b8491531f063?w=1920&q=80">
+                <i class="fas fa-sunset"></i> Senja
+            </button>
+            <button class="bg-option" data-bg="https://images.unsplash.com/photo-1519681393784-d120267933ba?w=1920&q=80">
+                <i class="fas fa-stars"></i> Bintang
+            </button>
+            
+            <label class="bg-upload-btn">
+                <i class="fas fa-upload"></i> Upload Gambar Sendiri
+                <input type="file" id="bgFileInput" accept="image/*">
+            </label>
+            
+            <button class="close-bg-preview" id="closeBgPreview">
+                <i class="fas fa-times"></i> Tutup
+            </button>
+        </div>
+    </div>
+
+    <div class="app-card">
+        <!-- Header -->
+        <div class="app-header">
+            <div class="app-title">
+                <i class="fas fa-headphones-alt"></i>
+                <h1>Gita Anjelina <span>Kasmiar</span></h1>
+            </div>
+            <div class="header-actions">
+                <button class="bg-btn" id="bgBtn">
+                    <i class="fas fa-image"></i> Background
+                </button>
+                <button class="add-music-btn" id="addMusicBtn">
+                    <i class="fas fa-plus-circle"></i> Tambah Musik
+                </button>
+            </div>
+        </div>
+
+        <!-- Input area -->
+        <div class="input-section" id="inputSection">
+            <input type="text" id="musicNameInput" placeholder="Nama lagu (opsional)" autocomplete="off">
+            <label for="musicFileInput" class="file-label">
+                <i class="fas fa-music"></i> Pilih file
+            </label>
+            <input type="file" id="musicFileInput" accept="audio/*">
+            <button class="submit-btn" id="submitMusicBtn">
+                <i class="fas fa-cloud-upload-alt"></i> Upload
+            </button>
+        </div>
+
+        <!-- Daftar musik -->
+        <ul class="music-list" id="musicList">
+            <li class="loading-state">
+                <i class="fas fa-spinner fa-pulse"></i> Memuat musik dari cloud...
+            </li>
+        </ul>
+
+        <div class="footer-note">
+            <span>
+                <i class="fas fa-cloud"></i> Tersimpan di Firebase 
+                <span class="status-badge" id="storageStatus">● Cloud</span>
+            </span>
+            <span>
+                <i class="fas fa-image" id="bgIndicator"></i> Background bisa diubah
+            </span>
+        </div>
+    </div>
+
+    <script>
+        // ============================================================
+        // 🔥 KONFIGURASI FIREBASE - GANTI DENGAN MILIK ANDA
+        // ============================================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyAkCH84BC9HpUxDrq7ZZfmr9s188Z9l7Lk",
+            authDomain: "gita-29e10.firebaseapp.com",
+            projectId: "gita-29e10",
+            storageBucket: "gita-29e10.firebasestorage.app",
+            messagingSenderId: "795266333662",
+            appId: "1:795266333662:web:ca73b68e2d8596dd4a7b4f"
+        };
+
+        // ============================================================
+        // INISIALISASI FIREBASE
+        // ============================================================
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const storage = firebase.storage();
+
+        // ============================================================
+        // DOM REFS
+        // ============================================================
+        const musicListEl = document.getElementById('musicList');
+        const musicNameInput = document.getElementById('musicNameInput');
+        const musicFileInput = document.getElementById('musicFileInput');
+        const submitBtn = document.getElementById('submitMusicBtn');
+        const addMusicBtn = document.getElementById('addMusicBtn');
+        const bgBtn = document.getElementById('bgBtn');
+        const bgPreview = document.getElementById('bgPreview');
+        const closeBgPreview = document.getElementById('closeBgPreview');
+        const bgFileInput = document.getElementById('bgFileInput');
+        const toast = document.getElementById('toast');
+        const storageStatus = document.getElementById('storageStatus');
+
+        // ============================================================
+        // STATE
+        // ============================================================
+        let tracks = [];
+        let isUploading = false;
+
+        // ============================================================
+        // TOAST NOTIFICATION
+        // ============================================================
+        let toastTimeout;
+
+        function showToast(message, type = 'info') {
+            clearTimeout(toastTimeout);
+            toast.textContent = message;
+            toast.className = 'toast show ' + type;
+            toastTimeout = setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3500);
+        }
+
+        // ============================================================
+        // BACKGROUND MANAGEMENT (Local Storage)
+        // ============================================================
+        const STORAGE_KEY_BG = 'gita_bg_image';
+
+        function setBackground(imageUrl) {
+            if (imageUrl === 'default' || !imageUrl) {
+                document.body.style.setProperty('--bg-image', 'none');
+                localStorage.removeItem(STORAGE_KEY_BG);
+            } else {
+                document.body.style.setProperty('--bg-image', `url("${imageUrl}")`);
+                localStorage.setItem(STORAGE_KEY_BG, imageUrl);
+            }
+        }
+
+        function loadBackground() {
+            const saved = localStorage.getItem(STORAGE_KEY_BG);
+            if (saved) {
+                setBackground(saved);
+            }
+        }
+
+        // Background modal
+        function openBgPreview() { bgPreview.classList.add('active'); }
+        function closeBgPreviewFn() { bgPreview.classList.remove('active'); }
+
+        bgBtn.addEventListener('click', openBgPreview);
+        closeBgPreview.addEventListener('click', closeBgPreviewFn);
+        bgPreview.addEventListener('click', (e) => {
+            if (e.target === bgPreview) closeBgPreviewFn();
+        });
+
+        document.querySelectorAll('.bg-option').forEach(btn => {
+            btn.addEventListener('click', () => {
+                setBackground(btn.dataset.bg);
+                closeBgPreviewFn();
+            });
+        });
+
+        bgFileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file && file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    setBackground(event.target.result);
+                    closeBgPreviewFn();
+                    bgFileInput.value = '';
+                    showToast('Background berhasil diubah!', 'success');
+                };
+                reader.readAsDataURL(file);
+            } else {
+                alert('Silakan pilih file gambar yang valid.');
+                bgFileInput.value = '';
+            }
+        });
+
+        // ============================================================
+        // FIREBASE CRUD OPERATIONS
+        // ============================================================
+
+        // --- Load tracks from Firestore ---
+        async function loadTracksFromFirebase() {
+            try {
+                const snapshot = await db.collection('tracks')
+                    .orderBy('createdAt', 'desc')
+                    .get();
+
+                tracks = [];
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    tracks.push({
+                        id: doc.id,
+                        name: data.name || 'Lagu tanpa nama',
+                        fileName: data.fileName || '',
+                        fileType: data.fileType || 'audio/mpeg',
+                        storagePath: data.storagePath || '',
+                        downloadURL: data.downloadURL || '',
+                        createdAt: data.createdAt || null
+                    });
+                });
+
+                renderMusicList();
+
+                if (tracks.length === 0) {
+                    showToast('Belum ada musik. Tambahkan lagu pertamamu!', 'info');
+                } else {
+                    showToast(`${tracks.length} lagu dimuat dari cloud`, 'success');
+                }
+
+                storageStatus.textContent = '● Cloud';
+                storageStatus.className = 'status-badge';
+
+            } catch (error) {
+                console.error('Error loading tracks:', error);
+                storageStatus.textContent = '● Offline';
+                storageStatus.className = 'status-badge offline';
+                showToast('Gagal memuat data: ' + error.message, 'error');
+                
+                musicListEl.innerHTML = `
+                    <li class="empty-state">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <span>Gagal terhubung ke Firebase</span>
+                        <small style="opacity:0.5; margin-top:6px;">${error.message}</small>
+                        <button onclick="location.reload()" style="margin-top:12px; padding:8px 20px; border-radius:30px; background:rgba(200,150,255,0.2); border:1px solid rgba(200,150,255,0.3); color:#d4bbff; cursor:pointer;">
+                            <i class="fas fa-sync"></i> Muat Ulang
+                        </button>
+                    </li>
+                `;
+            }
+        }
+
+        // --- Upload track to Firebase ---
+        async function uploadTrackToFirebase(name, file) {
+            if (isUploading) {
+                showToast('Sedang mengupload, tunggu sebentar...', 'info');
+                return false;
+            }
+
+            if (!file) {
+                showToast('Silakan pilih file audio terlebih dahulu!', 'error');
+                return false;
+            }
+
+            if (!file.type.startsWith('audio/')) {
+                showToast('File harus berupa audio (mp3, wav, ogg, dll)', 'error');
+                return false;
+            }
+
+            // Max 50MB
+            if (file.size > 50 * 1024 * 1024) {
+                showToast('Ukuran file terlalu besar (maks 50MB)', 'error');
+                return false;
+            }
+
+            let trackName = name.trim();
+            if (!trackName) {
+                const fileBase = file.name.replace(/\.[^/.]+$/, '');
+                trackName = fileBase || 'Lagu tanpa nama';
+            }
+
+            isUploading = true;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-pulse"></i> Uploading...';
+            showToast('Mengupload ke cloud...', 'info');
+
+            try {
+                // 1. Upload file ke Firebase Storage
+                const storageRef = storage.ref();
+                const filePath = `tracks/${Date.now()}_${file.name}`;
+                const fileRef = storageRef.child(filePath);
+                
+                const snapshot = await fileRef.put(file);
+                const downloadURL = await snapshot.ref.getDownloadURL();
+
+                // 2. Simpan metadata ke Firestore
+                const trackData = {
+                    name: trackName,
+                    fileName: file.name,
+                    fileType: file.type,
+                    storagePath: filePath,
+                    downloadURL: downloadURL,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
+
+                const docRef = await db.collection('tracks').add(trackData);
+
+                // 3. Tambahkan ke state lokal
+                const newTrack = {
+                    id: docRef.id,
+                    name: trackName,
+                    fileName: file.name,
+                    fileType: file.type,
+                    storagePath: filePath,
+                    downloadURL: downloadURL,
+                    createdAt: new Date()
+                };
+
+                tracks.unshift(newTrack);
+                renderMusicList();
+
+                showToast(`"${trackName}" berhasil diupload!`, 'success');
+
+                // Reset form
+                musicNameInput.value = '';
+                musicFileInput.value = '';
+                musicNameInput.focus();
+
+                return true;
+
+            } catch (error) {
+                console.error('Upload error:', error);
+                showToast('Gagal upload: ' + error.message, 'error');
+                return false;
+            } finally {
+                isUploading = false;
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> Upload';
+            }
+        }
+
+        // --- Delete track from Firebase ---
+        async function deleteTrackFromFirebase(trackId) {
+            if (!confirm('Hapus lagu ini dari cloud?')) return;
+
+            try {
+                // Cari track di state
+                const track = tracks.find(t => t.id === trackId);
+                if (!track) {
+                    showToast('Track tidak ditemukan', 'error');
+                    return;
+                }
+
+                showToast('Menghapus...', 'info');
+
+                // 1. Hapus dari Firebase Storage
+                if (track.storagePath) {
+                    try {
+                        const storageRef = storage.ref();
+                        const fileRef = storageRef.child(track.storagePath);
+                        await fileRef.delete();
+                    } catch (storageError) {
+                        console.warn('Storage delete error (mungkin file sudah tidak ada):', storageError);
+                    }
+                }
+
+                // 2. Hapus dari Firestore
+                await db.collection('tracks').doc(trackId).delete();
+
+                // 3. Hapus dari state
+                tracks = tracks.filter(t => t.id !== trackId);
+                renderMusicList();
+
+                showToast('Lagu berhasil dihapus!', 'success');
+
+            } catch (error) {
+                console.error('Delete error:', error);
+                showToast('Gagal menghapus: ' + error.message, 'error');
+            }
+        }
+
+        // ============================================================
+        // RENDER MUSIC LIST
+        // ============================================================
+        function renderMusicList() {
+            while (musicListEl.firstChild) {
+                musicListEl.removeChild(musicListEl.firstChild);
+            }
+
+            if (tracks.length === 0) {
+                const emptyLi = document.createElement('li');
+                emptyLi.className = 'empty-state';
+                emptyLi.innerHTML = `
+                    <i class="fas fa-music"></i>
+                    <span>Belum ada musik. Tambahkan lagu favoritmu!</span>
+                    <small style="opacity:0.5; margin-top:6px;">Lagu tersimpan di cloud Firebase</small>
+                `;
+                musicListEl.appendChild(emptyLi);
+                return;
+            }
+
+            tracks.forEach((track) => {
+                const li = document.createElement('li');
+                li.className = 'music-item';
+                li.dataset.id = track.id;
+
+                const infoDiv = document.createElement('div');
+                infoDiv.className = 'track-info';
+                infoDiv.innerHTML = `
+                    <i class="fas fa-play-circle"></i>
+                    <span class="track-name">${escapeHtml(track.name)}</span>
+                `;
+
+                const audioEl = document.createElement('audio');
+                audioEl.controls = true;
+                audioEl.preload = 'metadata';
+                if (track.downloadURL) {
+                    audioEl.src = track.downloadURL;
+                }
+                audioEl.controlsList = 'nodownload';
+                audioEl.style.minWidth = '120px';
+
+                const actionDiv = document.createElement('div');
+                actionDiv.className = 'action-buttons';
+
+                const playBtn = document.createElement('button');
+                playBtn.className = 'play-btn';
+                playBtn.innerHTML = '<i class="fas fa-play"></i>';
+                playBtn.setAttribute('aria-label', 'Putar');
+                playBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const audio = li.querySelector('audio');
+                    if (audio) {
+                        if (audio.paused) {
+                            audio.play().catch(() => {});
+                            playBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                        } else {
+                            audio.pause();
+                            playBtn.innerHTML = '<i class="fas fa-play"></i>';
+                        }
+                    }
+                });
+
+                audioEl.addEventListener('play', () => {
+                    playBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                });
+                audioEl.addEventListener('pause', () => {
+                    playBtn.innerHTML = '<i class="fas fa-play"></i>';
+                });
+                audioEl.addEventListener('ended', () => {
+                    playBtn.innerHTML = '<i class="fas fa-play"></i>';
+                });
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'delete-btn';
+                deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
+                deleteBtn.setAttribute('aria-label', 'Hapus');
+                deleteBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    deleteTrackFromFirebase(track.id);
+                });
+
+                actionDiv.appendChild(playBtn);
+                actionDiv.appendChild(deleteBtn);
+
+                li.appendChild(infoDiv);
+                li.appendChild(audioEl);
+                li.appendChild(actionDiv);
+                musicListEl.appendChild(li);
+            });
+        }
+
+        // ============================================================
+        // HELPER
+        // ============================================================
+        function escapeHtml(text) {
+            if (!text) return '';
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+        }
+
+        // ============================================================
+        // EVENT LISTENERS
+        // ============================================================
+
+        // Submit button
+        submitBtn.addEventListener('click', () => {
+            const name = musicNameInput.value;
+            const file = musicFileInput.files[0];
+            if (!file) {
+                showToast('Pilih file audio terlebih dahulu!', 'error');
+                return;
+            }
+            uploadTrackToFirebase(name, file);
+        });
+
+        // Enter key on name input
+        musicNameInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                submitBtn.click();
+            }
+        });
+
+        // Add music button triggers file input
+        addMusicBtn.addEventListener('click', () => {
+            musicFileInput.click();
+        });
+
+        // Auto-fill name when file selected
+        musicFileInput.addEventListener('change', () => {
+            if (musicFileInput.files.length > 0) {
+                const fileName = musicFileInput.files[0].name;
+                if (!musicNameInput.value.trim()) {
+                    const base = fileName.replace(/\.[^/.]+$/, '');
+                    musicNameInput.value = base;
+                }
+            }
+        });
+
+        // ============================================================
+        // INIT
+        // ============================================================
+        loadBackground();
+        loadTracksFromFirebase();
+
+        console.log('🎵 Gita Anjelina Kasmiar dengan Firebase!');
+        console.log('📁 Data tersimpan di Firestore & Storage');
+    </script>
+</body>
+</html>
